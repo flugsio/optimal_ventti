@@ -1,7 +1,6 @@
 
 pub struct Game {
     max: i64,
-    increments: Vec<i64>,
 }
 
 #[derive(Clone)]
@@ -28,6 +27,14 @@ impl Node {
         bets
     }
 
+    fn count_children(&self) -> i64 {
+        let mut count = 1;
+        for child in &self.children {
+            count += child.count_children();
+        };
+        count
+    }
+
     fn highest_iteration(&self) -> Vec<i64> {
         let mut iterations = Vec::new();
         iterations.push(self.bet.iteration);
@@ -47,13 +54,8 @@ impl Bet {
 
 impl Game {
     pub fn new(max: i64) -> Game {
-        let mut increments = Vec::new();
-        for x in (0..=10_000).step_by(50) {
-            increments.push(x);
-        }
         Game {
             max: max,
-            increments: increments,
         }
     }
 
@@ -61,6 +63,7 @@ impl Game {
         let tree = self.build_tree(Game::build_root());
         let highest_iteration = *tree.highest_iteration().iter().max().unwrap();
         println!("Last\tNeeded\tBets for max {}, {} iterations", self.max, highest_iteration);
+        println!("All count: {}", tree.count_children());
         let all = Game::get_tree(tree, highest_iteration);
         all.first().unwrap().print();
         all.last().unwrap().print();
@@ -93,22 +96,21 @@ impl Game {
 
     fn build_tree(&self, node: Node) -> Node {
         let mut children = Vec::new();
-        for increment in &self.increments {
-            let amount = node.bet.amount + increment;
+        for amount in (node.bet.total..(node.bet.total*3)).step_by(50) {
             let total = node.bet.total + amount;
-            let iteration = node.bet.iteration + 1;
-            if amount > 0 && amount <= self.max && amount * 2 >= total {
+            if amount <= self.max {
                 let new_node = Node {
                     parent: Some(Box::new(node.clone())),
                     children: Vec::new(),
                     bet: Bet {
                         amount: amount,
                         total: total,
-                        iteration: iteration,
+                        iteration: node.bet.iteration + 1,
                     },
                 };
-                // println!("{}, {}, {}, {:?}", new_node.bet.amount, new_node.bet.total, new_node.bet.iteration, new_node.bet_history());
                 children.push(self.build_tree(new_node));
+            } else {
+                break;
             }
         }
         Node {
