@@ -36,6 +36,10 @@ impl Node {
         };
         iterations
     }
+
+    fn print(&self) {
+        println!("{}\t{}\t{:?}", self.bet.amount, self.bet.total, self.bet_history());
+    }
 }
 
 impl Bet {
@@ -56,17 +60,22 @@ impl Game {
     pub fn find(&self) {
         let tree = self.build_tree(Game::build_root());
         let highest_iteration = *tree.highest_iteration().iter().max().unwrap();
-        println!("Done! {} Increments", highest_iteration);
-        println!("Last\tNeeded");
-        Game::print_tree(tree, highest_iteration);
+        println!("Last\tNeeded\tBets for max {}, {} iterations", self.max, highest_iteration);
+        let all = Game::get_tree(tree, highest_iteration);
+        all.first().unwrap().print();
+        all.last().unwrap().print();
     }
 
-    fn print_tree(node: Node, max_iteration: i64) {
-        if node.bet.iteration >= max_iteration {
-            println!("{}\t{}\t{:?}", node.bet.amount, node.bet.total, node.bet_history());
-        }
-        for child in node.children {
-            Game::print_tree(child, max_iteration);
+    fn get_tree(node: Node, max_iteration: i64) -> Vec<Node> {
+        if node.bet.iteration >= max_iteration &&
+            node.children.len() == 0 {
+            [node].to_vec()
+        } else {
+            let mut ret = Vec::new();
+            for child in node.children {
+                ret.append(&mut Game::get_tree(child, max_iteration));
+            }
+            ret
         }
     }
 

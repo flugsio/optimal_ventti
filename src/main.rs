@@ -1,6 +1,7 @@
 mod ventti;
 
 fn main() {
-    let game = ventti::Game::new(5300);
-    game.find();
+    for max in (6950..7000).step_by(50) {
+        ventti::Game::new(max).find();
+    }
 }
