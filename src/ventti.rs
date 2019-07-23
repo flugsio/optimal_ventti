@@ -1,6 +1,6 @@
 
 pub struct Game {
-    max: i64,
+    max: u32,
 }
 
 #[derive(Clone)]
@@ -12,13 +12,21 @@ struct Node {
 
 #[derive(Clone)]
 struct Bet {
-    pub amount: i64,
-    pub total: i64,
-    pub iteration: i64,
+    pub amount: u32,
+    pub total: u32,
+    pub iteration: u8,
 }
 
 impl Node {
-    fn bet_history(&self) -> Vec<i64> {
+    pub fn new_root() -> Node {
+         Node {
+            parent: None,
+            children: Vec::new(),
+            bet: Bet::first(),
+        }
+    }
+
+    fn bet_history(&self) -> Vec<u32> {
         let mut bets = match &self.parent {
             Some(p) => { p.bet_history() },
             None => { Vec::new() }
@@ -27,7 +35,7 @@ impl Node {
         bets
     }
 
-    fn count_children(&self) -> i64 {
+    fn count_children(&self) -> u32 {
         let mut count = 1;
         for child in &self.children {
             count += child.count_children();
@@ -35,7 +43,7 @@ impl Node {
         count
     }
 
-    fn highest_iteration(&self) -> Vec<i64> {
+    fn highest_iteration(&self) -> Vec<u8> {
         let mut iterations = Vec::new();
         iterations.push(self.bet.iteration);
         for child in &self.children {
@@ -50,17 +58,24 @@ impl Node {
 }
 
 impl Bet {
+    pub fn first() -> Bet {
+        Bet {
+            amount: 50,
+            total: 50,
+            iteration: 1,
+        }
+    }
 }
 
 impl Game {
-    pub fn new(max: i64) -> Game {
+    pub fn new(max: u32) -> Game {
         Game {
             max: max,
         }
     }
 
     pub fn find(&self) {
-        let tree = self.build_tree(Game::build_root());
+        let tree = self.build_tree(Node::new_root());
         let highest_iteration = *tree.highest_iteration().iter().max().unwrap();
         println!("Last\tNeeded\tBets for max {}, {} iterations", self.max, highest_iteration);
         println!("All count: {}", tree.count_children());
@@ -69,7 +84,7 @@ impl Game {
         all.last().unwrap().print();
     }
 
-    fn get_tree(node: Node, max_iteration: i64) -> Vec<Node> {
+    fn get_tree(node: Node, max_iteration: u8) -> Vec<Node> {
         if node.bet.iteration >= max_iteration &&
             node.children.len() == 0 {
             [node].to_vec()
@@ -79,18 +94,6 @@ impl Game {
                 ret.append(&mut Game::get_tree(child, max_iteration));
             }
             ret
-        }
-    }
-
-    fn build_root() -> Node {
-         Node {
-            parent: None,
-            children: Vec::new(),
-            bet: Bet {
-                amount: 50,
-                total: 50,
-                iteration: 1,
-            },
         }
     }
 
